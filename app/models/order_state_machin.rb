@@ -1,0 +1,39 @@
+class OrderStateMachine
+include Statesman::OrderStateMachine
+state :new, initial: true
+state :confirmed
+state :in_progress
+state :shipped
+state :cancelled
+
+transition from: :new, to: [:confirmed, :cancelled]
+transition from: :confirmed, to: [in_progress, :cancelled]
+transition from: :in_progress, to: [:shipped, :cancelled]
+transition from: :shipped, to: [:cancelled]
+
+after_trasition(to: :cancelled) do |order, transition|
+    OrderMailer.order_cancelled(order).deliver
+end
+
+after_trasition(to: :confirmed) do |order, transition|
+    OrderMailer.order_confirmation(order).deliver
+end
+
+after_trasition(to: :in_progress) do |order, transition|
+    OrderMailer.order_in_progress(order).deliver
+end
+
+after_trasition(to: :shipped) do |order, transition|
+    OrderMailer.order_shipped(order).deliver
+end
+
+def self.states_map
+    {
+        "new" => "Niepotwierdzone",
+        "confirmed" => "Złożone przez klienta",
+        "in_progress" => "Przyjęte do realizacji",
+        "shipped" => "Wysłane",
+        "cancelled" => "Anulowane",
+    }
+    end
+end
